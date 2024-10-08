@@ -1,9 +1,9 @@
 import { Model } from "mongoose";
 import { CreateDTO, ObjectIdDTO, UpdateDTO } from "../dtos/crud.dtos";
 import { EInternalError, ENotFound } from "../models/exception.models";
-import { _BaseRecordModel } from "../models/timestamp.model";
+import { RecordModel } from "../models/timestamp.model";
 
-export abstract class CRUDService<T extends _BaseRecordModel> {
+export abstract class CRUDService<T extends RecordModel> {
     __model: Model<any>;
     doUpdate: Boolean = false;
     constructor(model: Model<any>) {
@@ -44,7 +44,7 @@ export abstract class CRUDService<T extends _BaseRecordModel> {
     }
 }
 
-export abstract class RecordService<T extends _BaseRecordModel> extends CRUDService<T> {
+export abstract class RecordService<T extends RecordModel> extends CRUDService<T> {
     __model: Model<any>;
     constructor(model: Model<any>) {
         super(model);

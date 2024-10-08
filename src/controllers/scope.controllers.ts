@@ -1,10 +1,10 @@
 import { CreateDTO, ObjectIdDTO, UpdateDTO } from "../dtos/crud.dtos";
 import { CRUDService, RecordService } from "../services/scope.services";
 import { Get, Query, Post, Patch, Delete } from "@nestjs/common";
-import { _BaseRecordModel } from "../models/timestamp.model";
+import { RecordModel } from "../models/timestamp.model";
 import { Stripped } from "../decorators/stripped.decorator";
 
-export abstract class CRUDController<T extends _BaseRecordModel> {
+export abstract class CRUDController<T extends RecordModel> {
     __service: CRUDService<T>;
     constructor(service: CRUDService<T>) {
         this.__service = service;
@@ -24,7 +24,7 @@ export abstract class CRUDController<T extends _BaseRecordModel> {
     }
 }
 
-export abstract class RecordController<T extends _BaseRecordModel> extends CRUDController<T> {
+export abstract class RecordController<T extends RecordModel> extends CRUDController<T> {
     __service: RecordService<T>;
     constructor(service: RecordService<T>) {
         super(service);
