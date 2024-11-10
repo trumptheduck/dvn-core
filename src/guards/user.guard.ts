@@ -24,7 +24,6 @@ abstract class _UserGuard<T extends PermissionsObject> {
     }
 
     validatePermission(user: T, permission: string): boolean {
-        console.log(permission, user.permissions);
         let allowed = user.permissions.find(p => p === permission);
         if (allowed) return true;
         const levels = permission.split(".");
@@ -66,7 +65,6 @@ export class RpcUserGuard<T extends PermissionsObject> extends _UserGuard<T> imp
         const _authHeader = request.headers['authorization'];
         if (_authHeader?.startsWith("Bearer ")){
             const _token = _authHeader.substring(7, _authHeader.length);
-            console.log(_token);
             return await this.rpcAuthService.getUserFromToken({token: _token}).toPromise();
         } else {
             throw new EUnauth();
@@ -99,7 +97,6 @@ export class UserGuard<T extends PermissionsObject> extends _UserGuard<T> implem
         const _authHeader = request.headers['authorization'];
         if (_authHeader?.startsWith("Bearer ")){
             const _token = _authHeader.substring(7, _authHeader.length);
-            console.log(_token);
             return await this.auth$.getUserFromToken({token: _token}).toPromise();
         } else {
             throw new EUnauth();
