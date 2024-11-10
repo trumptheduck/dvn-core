@@ -12,10 +12,37 @@ export interface UserFromToken<T> {
     getUserFromToken(params: {token: string}): Observable<T>
 }
 
+abstract class _UserGuard<T extends PermissionsObject> {
+    validatePermissions(user: T, permissions: string[]): boolean {
+        if (!user.permissions||user.permissions.length == 0) return false;
+        let allowed = false;
+        permissions.forEach(permission => {
+            let result = this.validatePermission(user, permission);
+            if (result) allowed = true;
+        })
+        return allowed;
+    }
+
+    validatePermission(user: T, permission: string): boolean {
+        console.log(permission, user.permissions);
+        let allowed = user.permissions.find(p => p === permission);
+        if (allowed) return true;
+        const levels = permission.split(".");
+        const lastSegment = levels.pop();
+        if (levels.length == 0) return false;
+        if (lastSegment == "*") {
+            levels.pop();
+        }
+        const _permission = [...levels, "*"].join(".");
+        return this.validatePermission(user, _permission);
+    }
+}
+
 @Injectable()
-export class RpcUserGuard<T extends PermissionsObject> implements CanActivate {
+export class RpcUserGuard<T extends PermissionsObject> extends _UserGuard<T> implements CanActivate {
     private rpcAuthService: UserFromToken<T>;
     constructor(private reflector: Reflector, @Inject('AUTH_PACKAGE') private client: ClientGrpc) {
+        super();
         this.rpcAuthService = this.client.getService<UserFromToken<T>>('AuthService');
     }
 
@@ -35,29 +62,6 @@ export class RpcUserGuard<T extends PermissionsObject> implements CanActivate {
         return this.validatePermissions(_user, roles);
     }
 
-    validatePermissions(user: T, permissions: string[]): boolean {
-        let allowed = false;
-        permissions.forEach(permission => {
-            let result = this.validatePermission(user, permission);
-            if (result) allowed = true;
-        })
-        return allowed;
-    }
-
-    validatePermission(user: T, permission: string): boolean {
-        console.log(permission, user.permissions);
-        let allowed = user.permissions.find(p => p === permission);
-        if (allowed) return true;
-        const levels = permission.split(".");
-        const lastSegment = levels.pop();
-        if (levels.length == 0) return false;
-        if (lastSegment == "*") {
-            levels.pop();
-        }
-        const _permission = [...levels, "*"].join(".");
-        return this.validatePermission(user, _permission);
-    }
-
     async getUserData(request: Request): Promise<T> {
         const _authHeader = request.headers['authorization'];
         if (_authHeader?.startsWith("Bearer ")){
@@ -71,8 +75,10 @@ export class RpcUserGuard<T extends PermissionsObject> implements CanActivate {
 }
 
 @Injectable()
-export class UserGuard<T extends PermissionsObject> implements CanActivate {
-    constructor(private reflector: Reflector, @Inject('AUTH_SERVICE') private auth$: UserFromToken<T>) {}
+export class UserGuard<T extends PermissionsObject> extends _UserGuard<T> implements CanActivate {
+    constructor(private reflector: Reflector, @Inject('AUTH_SERVICE') private auth$: UserFromToken<T>) {
+        super();
+    }
     async canActivate(context: ExecutionContext,): Promise<boolean> {
         const permissionHander = this.reflector.get<string[]>('permissions', context.getHandler())??[];
         const classPermissionHandler = this.reflector.get<string[]>('permissions', context.getClass())??[];
@@ -87,29 +93,6 @@ export class UserGuard<T extends PermissionsObject> implements CanActivate {
         response.locals.user = _user;
         
         return this.validatePermissions(_user, roles);
-    }
-
-    validatePermissions(user: T, permissions: string[]): boolean {
-        let allowed = false;
-        permissions.forEach(permission => {
-            let result = this.validatePermission(user, permission);
-            if (result) allowed = true;
-        })
-        return allowed;
-    }
-
-    validatePermission(user: T, permission: string): boolean {
-        console.log(permission, user.permissions);
-        let allowed = user.permissions.find(p => p === permission);
-        if (allowed) return true;
-        const levels = permission.split(".");
-        const lastSegment = levels.pop();
-        if (levels.length == 0) return false;
-        if (lastSegment == "*") {
-            levels.pop();
-        }
-        const _permission = [...levels, "*"].join(".");
-        return this.validatePermission(user, _permission);
     }
 
     async getUserData(request: Request): Promise<T> {
